@@ -1,0 +1,292 @@
+---
+title: "TV ads in Georgia Senate Runoffs"
+author: "Aaron Kessler, Investigative/Data Team"
+date: "`r format(Sys.time(), '%B %d, %Y')`"
+output: html_document
+---
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(echo = TRUE)
+
+library(tidyverse)
+library(lubridate)
+library(janitor)
+library(gt)
+library(kableExtra)
+options(dplyr.summarise.inform = FALSE)
+
+#to pull data directly from AA mysql db, run this line, otherwise comment out:
+source("00_b_load_data_pullfrom_db_POSTELECTION.R")
+
+#load saved files from db pulls done in step 00_B
+senate_ads_all <- readRDS("raw_data/senate_ads_all_postelex.rds")
+house_ads_all <- readRDS("raw_data/house_ads_all_postelex.rds")
+prez_ads_all <- readRDS("raw_data/prez_ads_all_postelex.rds")
+
+#add field to mark senate/house
+senate_ads_all <- senate_ads_all %>% 
+  mutate(
+    office = "senate"
+  )
+
+house_ads_all <- house_ads_all %>% 
+  mutate(
+    office = "house"
+  )
+
+prez_ads_all <- prez_ads_all %>% 
+  mutate(
+    office = "prez"
+  )
+
+
+# combine into one (can also work with each separately if desired)
+admo_main <- bind_rows(prez_ads_all, senate_ads_all, house_ads_all)
+
+#add date-derived fields
+admo_main <- admo_main %>% 
+  mutate(
+    airdate_year = year(airdate),
+    airdate_month = month(airdate),
+    airdate_isoweek = isoweek(airdate),
+    airdate_day = day(airdate)
+  )
+
+#pull out GA runoff records only, tv ads
+ga_runoff_tvads <- admo_main %>% 
+  filter(election_state == "GA",
+         election %in% c("GA Senate 2020 General Runoff", "GA Senate Special 2020 General Runoff"),
+         !station %in% c("Facebook", "Google")) #take out social media ads so it's tv airings only
+
+```
+
+####
+The following summaries are analyzed and compiled from Ad Analytics' database of all political ad airings. The numbers below reflect the currently available data as of *`r format(Sys.time(), '%I:%M %p on %b. %d')`*.
+
+
+####
+### *Totals*
+
+```{r, echo=FALSE}
+
+ga_runoff_tvads %>% 
+  group_by(advertiser_party) %>% 
+  summarise(ads_aired = n(), est_spent = sum(spent)) %>%
+  gt() %>%
+  # tab_options(table.align = "left") %>%
+  cols_align(
+    align = "right",
+    columns = vars(ads_aired, est_spent)
+  ) %>% 
+  fmt_number(
+    columns = vars(ads_aired),
+    decimals = 0,
+    use_seps = TRUE
+  ) %>% 
+  fmt_currency(
+    columns = vars(est_spent),
+    decimals = 0,
+    currency = "USD"
+  ) %>% 
+   tab_header(
+    title = md("Ads Aired by **Party**"),
+    subtitle = "(From Nov. 4th)"
+  )
+
+```
+
+####
+```{r, echo=FALSE}
+
+ga_runoff_tvads %>% 
+  group_by(election, advertiser_party, advertiser) %>% 
+  summarise(ads_aired = n(), est_spent = sum(spent)) %>%
+  gt(rowname_col = "election", groupname_col = "advertiser_party") %>%
+  # tab_options(table.align = "left") %>% 
+  cols_align(
+    align = "right",
+    columns = vars(ads_aired, est_spent)
+  ) %>% 
+  fmt_number(
+    columns = vars(ads_aired),
+    decimals = 0,
+    use_seps = TRUE
+  ) %>% 
+  fmt_currency(
+    columns = vars(est_spent),
+    decimals = 0,
+    currency = "USD"
+  ) %>% 
+   tab_header(
+    title = md("Ads Aired by **Candidate**"),
+    subtitle = "(From Nov. 4th)"
+  )
+
+```
+
+
+
+
+##
+### *Tone*
+```{r, echo=FALSE}
+ga_runoff_tvads %>% 
+  count(advertiser_party, tone, name = "ads_aired") %>% 
+  gt() %>%
+  # tab_options(table.align = "left") %>% 
+  cols_align(
+    align = "right",
+    columns = vars(ads_aired)
+  ) %>% 
+  fmt_number(
+    columns = vars(ads_aired),
+    decimals = 0,
+    use_seps = TRUE
+  ) %>% 
+   tab_header(
+    title = md("Ad Tone by **Party**"),
+    subtitle = "(From Nov. 4th)"
+  )
+
+
+
+```
+
+####
+
+```{r, echo=FALSE}
+
+ga_runoff_tvads %>% 
+  group_by(advertiser_party, advertiser, tone) %>% 
+  summarise(ads_aired = n(), est_spent = sum(spent)) %>%
+  gt(rowname_col = "election", groupname_col = "advertiser_party") %>%
+  # tab_options(table.align = "left") %>% 
+  cols_align(
+    align = "right",
+    columns = vars(ads_aired, est_spent)
+  ) %>% 
+  fmt_number(
+    columns = vars(ads_aired),
+    decimals = 0,
+    use_seps = TRUE
+  ) %>% 
+  fmt_currency(
+    columns = vars(est_spent),
+    decimals = 0,
+    currency = "USD"
+  ) %>% 
+   tab_header(
+    title = md("Ad Tone by **Candidate**"),
+    subtitle = "(From Nov. 4th)"
+  )
+
+```
+
+
+
+##
+### *Markets*
+```{r, echo=FALSE}
+
+ga_runoff_tvads %>% 
+  group_by(market) %>% 
+  summarise(ads_aired = n(), est_spent = sum(spent)) %>%
+  arrange(desc(ads_aired)) %>% 
+  head(10) %>% 
+  gt() %>%
+  # tab_options(table.align = "left") %>% 
+  cols_align(
+    align = "right",
+    columns = vars(ads_aired, est_spent)
+  ) %>% 
+  fmt_number(
+    columns = vars(ads_aired),
+    decimals = 0,
+    use_seps = TRUE
+  ) %>% 
+  fmt_currency(
+    columns = vars(est_spent),
+    decimals = 0,
+    currency = "USD"
+  )  %>% 
+   tab_header(
+    title = md("Top 10 Markets for Ad Airings"),
+    subtitle = "(From Nov. 4th)"
+  )
+
+
+```
+
+
+##
+### *Favorite Shows*
+```{r, echo=FALSE}
+
+ga_runoff_tvads %>% 
+  group_by(program_name) %>% 
+  summarise(ads_aired = n(), est_spent = sum(spent)) %>%
+  arrange(desc(ads_aired)) %>% 
+  head(15) %>% 
+  gt() %>%
+  # tab_options(table.align = "left") %>% 
+  cols_align(
+    align = "right",
+    columns = vars(ads_aired, est_spent)
+  ) %>% 
+  fmt_number(
+    columns = vars(ads_aired),
+    decimals = 0,
+    use_seps = TRUE
+  ) %>% 
+  fmt_currency(
+    columns = vars(est_spent),
+    decimals = 0,
+    currency = "USD"
+  )  %>% 
+   tab_header(
+    title = md("Top Programs for Ad Airings"),
+    subtitle = "(From Nov. 4th)"
+  )
+
+
+```
+
+
+
+
+```{r, echo=FALSE}
+
+
+
+
+```
+
+
+
+```{r, echo=FALSE}
+
+
+
+
+```
+
+
+
+```{r, echo=FALSE}
+
+
+
+
+```
+
+
+
+```{r, echo=FALSE}
+
+
+
+
+```
+
+
+

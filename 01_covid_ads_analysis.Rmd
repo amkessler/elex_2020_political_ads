@@ -1,0 +1,254 @@
+---
+title: "TV Ad Analysis - Coronavirus Ads"
+author: "Aaron Kessler"
+date: ""
+output: html_document
+---
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(echo = TRUE)
+
+library(tidyverse)
+library(lubridate)
+library(janitor)
+library(DT)
+library(gt)
+library(kableExtra)
+
+#load saved files from db pulls done in step 00
+senate_ads_all <- readRDS("raw_data/senate_ads_all.rds")
+house_ads_all <- readRDS("raw_data/house_ads_all.rds")
+prez_ads_all <- readRDS("raw_data/prez_ads_all.rds")
+
+#add field to mark senate/house
+senate_ads_all <- senate_ads_all %>% 
+  mutate(
+    office = "senate"
+  )
+
+house_ads_all <- house_ads_all %>% 
+  mutate(
+    office = "house"
+  )
+
+prez_ads_all <- prez_ads_all %>% 
+  mutate(
+    office = "prez"
+  )
+
+
+# combine into one (can also work with each separately if desired)
+admo_main <- bind_rows(prez_ads_all, senate_ads_all, house_ads_all)
+
+#add date-derived fields
+admo_main <- admo_main %>% 
+  mutate(
+    airdate_year = year(airdate),
+    airdate_month = month(airdate),
+    airdate_isoweek = isoweek(airdate),
+    airdate_day = day(airdate)
+  )
+
+glimpse(admo_main)
+
+#combine three issue columns into a single one for easier topic identification
+#add coronavirus flag column as well
+admo_main <- admo_main %>% 
+  mutate(
+    issues_combined = str_c(issue_1, issue_2, issue_3, sep = "|"),
+    corona = if_else(str_detect(issues_combined, "Coronavirus"), "Y", "N")
+  ) 
+
+#pull out only ads from after covid ads begun on certain date
+admo_covid_universe <- admo_main %>% 
+  filter(airdate >= "2020-03-01")
+
+#combine three issue columns into a single one for easier topic identification
+#add coronavirus flag column as well
+admo_covid_universe <- admo_covid_universe %>% 
+  mutate(
+    issues_combined = str_c(issue_1, issue_2, issue_3, sep = "|"),
+    corona = if_else(str_detect(issues_combined, "Coronavirus"), "Y", "N")
+  ) 
+
+#write to csv
+write_csv(admo_covid_universe, "processed_data/admo_recent.csv")
+
+
+#dataframe of just the covid records for below
+corona_ads <- admo_covid_universe %>% 
+ filter(corona == "Y")
+
+
+# QUESTIONS
+# 1.	Let's pull every ad that mentions coronavirus/covid since the start of the outbreak. That's the universe.
+# 2.	Let's ask the data some basic questions:
+# •	Which party is using the virus to score political points most often, i.e. running the most ads.
+# •	How many ads are coming from super PACs versus campaigns?
+# •	How much TOTAL has been spent on these ads? By party?
+# •	Which campaigns are running the most?
+# •	What is the trend, i.e. are they increasing or decreasing?
+# •	What do the ads SAY, and let's find some that are truly outrageous?
+# •	How is this playing in competitive Senate races, this may actually be the lead. Are Republican candidates using Trump's talking points? Are they including Trump in their ads? That may be a separate data run, or even a separate story.
+ 
+
+
+```
+
+
+
+Unique virus ads 
+```{r, echo=FALSE}
+
+unique_creatives_allvirus <- corona_ads %>% 
+  group_by(office, advertiser_party, election_state, advertiser_type, advertiser, target, title, link, issues_combined) %>% 
+  summarise(total_airings_to_date = n(), estimated_spending = sum(spent), first_aired_on = min(airdate)) %>% 
+  arrange(office, desc(total_airings_to_date)) %>% 
+  distinct(link, .keep_all = TRUE)
+
+unique_creatives_allvirus
+
+write_csv(unique_creatives_allvirus, "output/unique_creatives_all_coronavirus.csv")
+
+
+```
+
+
+March 16 ads - first day of covid ad airings
+```{r, echo=FALSE}
+
+corona_ads %>% 
+  filter(airdate == "2020-03-16") %>% 
+  group_by(advertiser_party, advertiser_type, advertiser, election, target, link) %>% 
+  summarise(adcount = n(), estspent = sum(spent))
+
+
+```
+
+
+
+
+
+### Analysis of virus ads
+
+Grand totals
+```{r, echo=FALSE}
+
+corona_ads %>% 
+  summarise(ad_count = n(), est_spent = sum(spent))
+
+
+
+```
+
+
+Which party is using running the most virus-related ads across whole universe
+```{r, echo=FALSE}
+
+corona_ads %>% 
+  group_by(advertiser_party) %>% 
+  summarise(ad_count = n(), est_spent = sum(spent))
+
+
+
+```
+
+
+Which office type
+```{r, echo=FALSE}
+
+corona_ads %>% 
+  group_by(office) %>% 
+  summarise(ad_count = n(), est_spent = sum(spent))
+
+
+
+```
+
+
+
+By house, senate and prez elections - Which party is using running the most total virus-related ads
+```{r, echo=FALSE}
+
+corona_ads %>% 
+  group_by(office, advertiser_party) %>% 
+  summarise(ad_count = n(), est_spent = sum(spent))
+
+
+
+```
+
+Individual **senate** races to see which campaigns running most ads and by party.
+
+```{r, echo=FALSE}
+
+corona_ads %>% 
+  filter(office == "senate") %>% 
+  count(election, election_state, office, advertiser_party) %>% 
+  pivot_wider(names_from = advertiser_party, values_from = n) %>% 
+  replace(is.na(.), 0) %>% 
+  mutate(totalairings = Democrat + Republican + Independent) %>% 
+  arrange(office, desc(totalairings))
+
+
+```
+
+ 
+**House** races
+
+```{r, echo=FALSE}
+
+corona_ads %>% 
+  filter(office == "house") %>% 
+  count(election, election_state, office, advertiser_party) %>% 
+  pivot_wider(names_from = advertiser_party, values_from = n) %>% 
+  replace(is.na(.), 0) %>% 
+  mutate(totalairings = Democrat + Republican) %>% #were no independents to date; check this regularly to be sure hasn't changed
+  arrange(office, desc(totalairings))
+
+
+```
+
+
+
+
+
+
+# Super PACs/Issue Groups vs. Candidates' Campaigns
+
+
+Total by group type
+```{r, echo=FALSE}
+
+corona_ads %>% 
+  filter(office == "prez") %>%
+  group_by(advertiser_type) %>% 
+  summarise(ad_count = n(), est_spent = sum(spent))
+
+
+```
+
+Including party and office type as well
+```{r, echo=FALSE}
+
+corona_ads %>% 
+  group_by(office, advertiser_party, advertiser_type) %>% 
+  summarise(ad_count = n(), est_spent = sum(spent))
+
+
+```
+
+
+```{r, echo=FALSE}
+
+
+
+```
+
+
+```{r, echo=FALSE}
+
+
+
+```
+

@@ -1,0 +1,388 @@
+---
+title: "TV Ad Analysis - Coronavirus Ads"
+author: "Aaron Kessler"
+date: ""
+output: html_document
+---
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(echo = TRUE)
+
+library(tidyverse)
+library(lubridate)
+library(janitor)
+library(DT)
+library(gt)
+library(kableExtra)
+
+#load saved files from db pulls done in step 00
+senate_ads_all <- readRDS("raw_data/senate_ads_all.rds")
+house_ads_all <- readRDS("raw_data/house_ads_all.rds")
+prez_ads_all <- readRDS("raw_data/prez_ads_all.rds")
+
+#add field to mark senate/house
+senate_ads_all <- senate_ads_all %>% 
+  mutate(
+    office = "senate"
+  )
+
+house_ads_all <- house_ads_all %>% 
+  mutate(
+    office = "house"
+  )
+
+prez_ads_all <- prez_ads_all %>% 
+  mutate(
+    office = "prez"
+  )
+
+
+# combine into one (can also work with each separately if desired)
+admo_main <- bind_rows(prez_ads_all, senate_ads_all, house_ads_all)
+
+#add date-derived fields
+admo_main <- admo_main %>% 
+  mutate(
+    airdate_year = year(airdate),
+    airdate_month = month(airdate),
+    airdate_isoweek = isoweek(airdate),
+    airdate_day = day(airdate)
+  )
+
+glimpse(admo_main)
+
+#combine three issue columns into a single one for easier topic identification
+#add coronavirus flag column as well
+admo_main <- admo_main %>% 
+  mutate(
+    issues_combined = str_c(issue_1, issue_2, issue_3, sep = "|"),
+    corona = if_else(str_detect(issues_combined, "Coronavirus"), "Y", "N")
+  ) 
+
+# write_csv(admo_main, "processed_data/admo_main.csv")
+
+#pull out only ads from a recent date
+admo_recent <- admo_main %>% 
+  filter(airdate >= "2020-03-01")
+
+
+#combine three issue columns into a single one for easier topic identification
+#add coronavirus flag column as well
+admo_recent <- admo_recent %>% 
+  mutate(
+    issues_combined = str_c(issue_1, issue_2, issue_3, sep = "|"),
+    corona = if_else(str_detect(issues_combined, "Coronavirus"), "Y", "N")
+  ) 
+
+#write to csv
+write_csv(admo_recent, "processed_data/admo_recent.csv")
+
+
+# QUESTIONS
+# 1.	Let's pull every ad that mentions coronavirus/covid since the start of the outbreak. That's the universe.
+# 2.	Let's ask the data some basic questions:
+# •	Which party is using the virus to score political points most often, i.e. running the most ads.
+# •	How many ads are coming from super PACs versus campaigns?
+# •	How much TOTAL has been spent on these ads? By party?
+# •	Which campaigns are running the most?
+# •	What is the trend, i.e. are they increasing or decreasing?
+# •	What do the ads SAY, and let's find some that are truly outrageous?
+# •	How is this playing in competitive Senate races, this may actually be the lead. Are Republican candidates using Trump's talking points? Are they including Trump in their ads? That may be a separate data run, or even a separate story.
+ 
+
+
+```
+
+
+Unique virus ads for certain period
+```{r, echo=FALSE}
+
+unique_creatives_recent <- admo_recent %>% 
+  filter(corona == "Y",
+         airdate >= "2020-04-01") %>% 
+  group_by(office, advertiser_party, election_state, advertiser_type, advertiser, target, title, link, issues_combined) %>% 
+  summarise(aired_ad_count = n(), estimated_spending = sum(spent), first_aired_on = min(airdate)) %>% 
+  arrange(office, desc(aired_ad_count))
+
+write_csv(unique_creatives_recent, "output/unique_creatives_fromApril1.csv")
+
+
+```
+
+
+Unique virus ads - all, no date restrictions
+```{r, echo=FALSE}
+
+unique_creatives_allvirus <- admo_recent %>% 
+  filter(corona == "Y") %>% 
+  group_by(office, advertiser_party, election_state, advertiser_type, advertiser, target, title, link, issues_combined) %>% 
+  summarise(total_airings_to_date = n(), estimated_spending = sum(spent), first_aired_on = min(airdate)) %>% 
+  arrange(office, desc(total_airings_to_date))
+
+write_csv(unique_creatives_allvirus, "output/unique_creatives_all_coronavirus.csv")
+
+
+```
+
+
+### Analysis of unique virus ads
+
+Which party is using running the most virus-related ads
+```{r, echo=FALSE}
+
+
+
+```
+
+
+Let's reshape this to a wide format to make it easier to see what's going on
+
+```{r, echo=FALSE}
+
+admo_recent %>% 
+  filter(office == "senate") %>% 
+  count(election, election_state, office, advertiser_party) %>% 
+  pivot_wider(names_from = advertiser_party, values_from = n) %>% 
+  replace(is.na(.), 0) %>% 
+  mutate(totalairings = Democrat + Republican + Independent) %>% 
+  arrange(desc(totalairings))
+
+
+```
+
+
+
+
+
+
+```{r, echo=FALSE}
+
+
+
+```
+
+
+```{r, echo=FALSE}
+
+
+
+```
+
+
+```{r, echo=FALSE}
+
+
+
+```
+
+
+
+
+## Analysis of recent ads
+
+How many total ads per office category
+```{r, echo=FALSE}
+
+admo_recent %>% 
+  count(office) 
+
+
+admo_recent %>% 
+  count(office, advertiser_type) 
+
+admo_main %>% 
+  count(airdate_year, airdate_month, office, advertiser_type) %>% 
+  arrange(office, airdate_year, airdate_month) 
+
+
+
+```
+
+Counting coronavirus ad airings
+```{r, echo=FALSE}
+
+admo_recent %>% 
+  count(corona)
+
+admo_recent %>% 
+  count(advertiser_party, corona)
+
+admo_recent %>% 
+  count(airdate_isoweek, corona)
+
+
+
+
+
+```
+
+
+
+
+
+# ```{r, echo=FALSE}
+# 
+# admo_recent %>% 
+#   count(election_state, advertiser_party) %>% 
+#   kable() %>% 
+#   kable_styling(bootstrap_options = "striped", full_width = F, position = "left") 
+# 
+# 
+# ```
+
+Which party has more ads?
+
+```{r, echo=FALSE}
+
+admo_recent %>% 
+  count(advertiser_party) 
+
+```
+
+About the same.  
+  
+Which senate races are the hottest ones?
+
+```{r, echo=FALSE}
+
+admo_recent %>% 
+  filter(office == "senate") %>% 
+  count(election, office, sort = TRUE)
+
+
+```
+
+
+
+
+Let's reshape this to a wide format to make it easier to see what's going on
+
+```{r, echo=FALSE}
+
+admo_recent %>% 
+  filter(office == "senate") %>% 
+  count(election, election_state, office, advertiser_party) %>% 
+  pivot_wider(names_from = advertiser_party, values_from = n) %>% 
+  replace(is.na(.), 0) %>% 
+  mutate(totalairings = Democrat + Republican + Independent) %>% 
+  arrange(desc(totalairings))
+
+
+```
+
+
+
+## Ad Topics
+
+#### What subjects are most prevalent 
+Note: up to three issues can be assigned to each aired ad, so the analysis below shouldn't be used for spot counts in the same way. To get issue counts, we'll separate each issue into its own separate row.
+
+```{r, echo=FALSE}
+
+admo_candonly_supertues_forissues <- admo_candonly_supertues %>% 
+  unite(issue_combined, issue_1:issue_3, sep = ",") %>% 
+  separate_rows(issue_combined, sep = ",") %>% 
+  filter(issue_combined != "")
+
+
+```
+
+With that done, let's look at the most common issues. First, by party altogether across all of our races combined.  
+  
+Republicans:
+
+```{r, echo=FALSE}
+
+admo_candonly_supertues_forissues %>% 
+  filter(advertiser_party == "Republican") %>% 
+  count(issue_combined, sort = TRUE) 
+
+```
+
+Democrats:
+
+```{r, echo=FALSE}
+
+admo_candonly_supertues_forissues %>% 
+  filter(advertiser_party == "Democrat") %>% 
+  count(issue_combined, sort = TRUE) 
+
+```
+
+Republican Senate Races:
+
+```{r, echo=FALSE}
+
+admo_candonly_supertues_forissues %>% 
+  filter(advertiser_party == "Republican",
+         office == "senate") %>% 
+  count(issue_combined, sort = TRUE) 
+
+
+```
+
+Democratic Senate races:
+
+```{r, echo=FALSE}
+
+admo_candonly_supertues_forissues %>% 
+  filter(advertiser_party == "Democrat",
+         office == "senate") %>% 
+  count(issue_combined, sort = TRUE) 
+
+```
+
+
+Republican House races:
+
+```{r, echo=FALSE}
+
+admo_candonly_supertues_forissues %>% 
+  filter(advertiser_party == "Republican",
+         office == "house") %>% 
+  count(issue_combined, sort = TRUE) 
+
+```
+
+Democratic house races:
+
+```{r, echo=FALSE}
+
+admo_candonly_supertues_forissues %>% 
+  filter(advertiser_party == "Democrat",
+         office == "house") %>% 
+  count(issue_combined, sort = TRUE) 
+
+```
+
+
+## Issues in a single primary contest
+
+Let's take a look at a single primary...  AL Republican Senate primary.  
+  
+First, total top issues across the Republican candidates for AL senate. 
+
+```{r, echo=FALSE}
+
+admo_candonly_supertues_forissues %>% 
+  filter(advertiser_party == "Republican",
+         office == "senate",
+         election_state == "AL") 
+
+
+```
+
+Now the candidates individually
+```{r, echo=FALSE}
+
+admo_candonly_supertues_forissues %>% 
+  filter(advertiser_party == "Republican",
+         office == "senate",
+         election_state == "AL") %>% 
+  count(advertiser, issue_combined) %>% 
+  arrange(advertiser, desc(n)) 
+
+
+```
+
+
