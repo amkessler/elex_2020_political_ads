@@ -150,5 +150,3 @@ ggplot(dailycount_bycand, aes(x = airdate, y = ad_count)) +
   theme_minimal() +
   scale_y_continuous(labels = comma)
 
-
-
