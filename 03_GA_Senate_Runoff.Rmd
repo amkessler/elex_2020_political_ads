@@ -11,6 +11,7 @@ knitr::opts_chunk$set(echo = TRUE)
 library(tidyverse)
 library(lubridate)
 library(janitor)
+library(scales)
 library(gt)
 library(kableExtra)
 options(dplyr.summarise.inform = FALSE)
@@ -61,7 +62,7 @@ ga_runoff_tvads <- admo_main %>%
 ```
 
 ####
-The following summaries are analyzed and compiled from Ad Analytics' database of all political ad airings. The numbers below reflect the currently available data as of *`r format(Sys.time(), '%I:%M %p on %b. %d')`*.
+The following summaries are compiled from Ad Analytics' database of all political ad airings. The numbers below reflect the currently available data as of *`r format(Sys.time(), '%I:%M %p on %b. %d')`*.
 
 
 ####
@@ -121,6 +122,29 @@ ga_runoff_tvads %>%
     title = md("Ads Aired by **Candidate**"),
     subtitle = "(From Nov. 4th)"
   )
+
+```
+
+####
+```{r, echo=FALSE}
+
+dailycount_byparty <- ga_runoff_tvads %>% 
+  count(airdate, advertiser_party, name = "ad_count")
+
+#area chart by party
+ggplot(dailycount_byparty, aes(x = airdate, y = ad_count)) + 
+  geom_area(aes(color = advertiser_party, fill = advertiser_party), 
+            alpha = 0.5, position = position_dodge(0.8)) +
+  scale_color_manual(values = c("#00AFBB", "#F2785D")) +
+  scale_fill_manual(values = c("#00AFBB", "#F2785D")) +
+  labs(title = "Daily Count of Ad Spots, By Party", 
+       subtitle = "",
+       x = "",
+       y = "") +
+  theme_minimal() +
+  scale_y_continuous(labels = comma)
+
+
 
 ```
 
@@ -254,12 +278,6 @@ ga_runoff_tvads %>%
 
 
 
-```{r, echo=FALSE}
-
-
-
-
-```
 
 
 

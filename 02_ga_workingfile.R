@@ -1,6 +1,7 @@
 library(tidyverse)
 library(lubridate)
 library(janitor)
+library(scales)
 library(gt)
 library(kableExtra)
 options(dplyr.summarise.inform = FALSE)
@@ -74,3 +75,58 @@ ga_runoff_tvads %>%
 ga_runoff_tvads %>% 
   count(advertiser_party, market) %>% 
   top_n(n = 5, wt = market)
+
+
+
+### CHARTS ####
+
+dailycount_byparty <- ga_runoff_tvads %>% 
+  count(airdate, advertiser_party, name = "ad_count")
+
+dailycount_byparty
+
+# #sample area chart
+# # http://www.sthda.com/english/articles/32-r-graphics-essentials/128-plot-time-series-data-using-ggplot/
+# df <- economics %>%
+#   select(date, psavert, uempmed) %>%
+#   gather(key = "variable", value = "value", -date)
+# 
+# head(df, 3)
+# 
+# ggplot(df, aes(x = date, y = value)) + 
+#   geom_area(aes(color = variable, fill = variable), 
+#             alpha = 0.5, position = position_dodge(0.8)) +
+#   scale_color_manual(values = c("#00AFBB", "#F2785D")) +
+#   scale_fill_manual(values = c("#00AFBB", "#F2785D"))
+
+
+#apply to ad dataframe
+ggplot(dailycount_byparty, aes(x = airdate, y = ad_count)) + 
+  geom_area(aes(color = advertiser_party, fill = advertiser_party), 
+            alpha = 0.5, position = position_dodge(0.8)) +
+  scale_color_manual(values = c("#00AFBB", "#F2785D")) +
+  scale_fill_manual(values = c("#00AFBB", "#F2785D")) +
+  labs(title = "GA Senate Runoffs - Ad Spots By Party", 
+       subtitle = "",
+       x = "",
+       y = "") +
+  theme_minimal() +
+  scale_y_continuous(labels = comma)
+
+
+
+#bar chart
+ggplot(dailycount_byparty, aes(x = airdate, y = ad_count)) + 
+  geom_col(aes(color = advertiser_party, fill = advertiser_party), 
+            alpha = 0.5, position = position_dodge(preserve = "single")) +
+  scale_color_manual(values = c("#00AFBB", "#F2785D")) +
+  scale_fill_manual(values = c("#00AFBB", "#F2785D")) +
+  labs(title = "GA Senate Runoffs - Ad Spots By Party", 
+       subtitle = "",
+       x = "",
+       y = "") +
+  theme_minimal() +
+  scale_y_continuous(labels = comma)
+
+
+
