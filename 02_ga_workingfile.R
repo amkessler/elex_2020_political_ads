@@ -141,8 +141,8 @@ dailycount_bycand
 ggplot(dailycount_bycand, aes(x = airdate, y = ad_count)) + 
   geom_col(aes(color = advertiser, fill = advertiser), 
            alpha = 0.5, position = position_dodge(preserve = "single")) +
-  scale_color_manual(values = c("#DC3A3A", "#00AFBB", "#F2785D", "#2E90B8")) +
-  scale_fill_manual(values = c("#DC3A3A", "#00AFBB", "#F2785D", "#2E90B8")) +
+  scale_color_manual(values = c("#DC3A3A", "#4BAFD8", "#E8857E", "#2E90B8")) +
+  scale_fill_manual(values = c("#DC3A3A", "#4BAFD8", "#E8857E", "#2E90B8")) +
   labs(title = "GA Senate Runoffs - Ad Spots By Candidate", 
        subtitle = "",
        x = "",
