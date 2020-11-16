@@ -1,6 +1,6 @@
 ---
 title: "TV ads in Georgia Senate Runoffs"
-author: "Aaron Kessler"
+author: "Aaron Kessler, Data/Investigations Team"
 date: "`r format(Sys.time(), '%B %d, %Y')`"
 output: html_document
 ---
@@ -125,7 +125,9 @@ ga_runoff_tvads %>%
 
 ```
 
+
 ####
+### *Daily Totals*
 ```{r, echo=FALSE}
 
 dailycount_byparty <- ga_runoff_tvads %>% 
@@ -142,6 +144,7 @@ ggplot(dailycount_byparty, aes(x = airdate, y = ad_count)) +
        x = "",
        y = "") +
   theme_minimal() +
+  theme(plot.title = element_text(hjust = 0.5)) +
   scale_y_continuous(labels = comma)
 
 
@@ -165,6 +168,7 @@ ggplot(dailycount_bycand, aes(x = airdate, y = ad_count)) +
        x = "",
        y = "") +
   theme_minimal() +
+  theme(plot.title = element_text(hjust = 0.5)) +
   scale_y_continuous(labels = comma)
 
 
