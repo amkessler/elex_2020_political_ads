@@ -308,7 +308,10 @@ ga_runoff_tvads %>%
 
 
 ```{r, echo=FALSE}
-
+## Export files ####
+write_csv(ga_runoff_tvads, "output/ga_runoff_tvads.csv")
+write_csv(dailycount_bycand, "output/ga_dailycount_bycand.csv")
+write_csv(dailycount_byparty, "output/ga_dailycount_byparty.csv")
 
 
 
