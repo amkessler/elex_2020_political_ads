@@ -69,16 +69,22 @@ saveRDS(house_ads_all, "raw_data/house_ads_all_postelex.rds")
 #### DELTA DATABASE ####
 
 #pull main table into db object
+admo_delta_db <- tbl(con, "vw_bloomberg_delta_spending")
 
-# admo_delta_db <- tbl(con, "vw_bloomberg_delta_spending")
-# 
-# glimpse(admo_delta_db)
-# 
-# temp_delta <- admo_delta_db %>% 
-#   head() %>% 
-#   collect()
-# 
-# temp_delta
+glimpse(admo_delta_db)
+
+#filter just for post election records and download
+admo_delta_postelex <- admo_delta_db %>% 
+  filter(spend_date >= "2020-11-04") %>% 
+  collect()
+
+#add timestamp
+admo_delta_postelex$bb_data_date <- current_time
+
+glimpse(admo_delta_postelex)
+
+#save as rds
+saveRDS(admo_delta_postelex, "raw_data/admo_delta_postelex.rds")
 
   
 
