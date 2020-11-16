@@ -310,8 +310,17 @@ ga_runoff_tvads %>%
 ```{r, echo=FALSE}
 ## Export files ####
 write_csv(ga_runoff_tvads, "output/ga_runoff_tvads.csv")
-write_csv(dailycount_bycand, "output/ga_dailycount_bycand.csv")
-write_csv(dailycount_byparty, "output/ga_dailycount_byparty.csv")
+
+#export for outside charting tools - switch to wide format
+dailycount_bycand %>% 
+  pivot_wider(names_from = advertiser, values_from = ad_count) %>% 
+  replace(is.na(.), 0) %>% 
+  write_csv("output/ga_dailycount_bycand_wide.csv")
+
+dailycount_byparty %>% 
+  pivot_wider(names_from = advertiser_party, values_from = ad_count) %>% 
+  replace(is.na(.), 0) %>% 
+  write_csv("output/ga_dailycount_byparty_wide.csv")
 
 
 
