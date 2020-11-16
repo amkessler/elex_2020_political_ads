@@ -1,6 +1,6 @@
 ---
 title: "TV ads in Georgia Senate Runoffs"
-author: "Aaron Kessler, Data/Investigations Team"
+author: "Aaron Kessler, Data/Investigations"
 date: "`r format(Sys.time(), '%B %d, %Y')`"
 output: html_document
 ---
