@@ -148,6 +148,28 @@ ggplot(dailycount_byparty, aes(x = airdate, y = ad_count)) +
 
 ```
 
+####
+```{r, echo=FALSE}
+
+dailycount_bycand <- ga_runoff_tvads %>% 
+  count(airdate, advertiser, name = "ad_count")
+
+#bar chart for CANDIDATES
+ggplot(dailycount_bycand, aes(x = airdate, y = ad_count)) + 
+  geom_col(aes(color = advertiser, fill = advertiser), 
+           alpha = 0.5, position = position_dodge(preserve = "single")) +
+  scale_color_manual(values = c("#DC3A3A", "#4BAFD8", "#E8857E", "#2E90B8")) +
+  scale_fill_manual(values = c("#DC3A3A", "#4BAFD8", "#E8857E", "#2E90B8")) +
+  labs(title = "Daily Count of Ad Spots, By Candidate", 
+       subtitle = "",
+       x = "",
+       y = "") +
+  theme_minimal() +
+  scale_y_continuous(labels = comma)
+
+
+```
+
 
 
 
