@@ -19,7 +19,8 @@ options(dplyr.summarise.inform = FALSE)
 #to pull data directly from AA mysql db, run this line, otherwise comment out:
 source("00_b_load_data_pullfrom_db_POSTELECTION.R")
 
-#load saved files from db pulls done in step 00_B
+
+#load saved ADMO files from db pulls done in step 00_B
 senate_ads_all <- readRDS("raw_data/senate_ads_all_postelex.rds")
 house_ads_all <- readRDS("raw_data/house_ads_all_postelex.rds")
 prez_ads_all <- readRDS("raw_data/prez_ads_all_postelex.rds")
@@ -59,10 +60,32 @@ ga_runoff_tvads <- admo_main %>%
          election %in% c("GA Senate 2020 General Runoff", "GA Senate Special 2020 General Runoff"),
          !station %in% c("Facebook", "Google")) #take out social media ads so it's tv airings only
 
+
+#### DELTA - SPENDING CONTRACTS ####
+
+#load saved delta spending file
+admo_delta_postelex <- readRDS("raw_data/admo_delta_postelex.rds")
+
+admo_delta_postelex <- admo_delta_postelex %>% 
+  mutate(
+    spend_date_year = year(spend_date),
+    spend_date_month = month(spend_date),
+    spend_date_isoweek = isoweek(spend_date),
+    spend_date_day = day(spend_date)
+  )
+
+ga_runoff_delta <- admo_delta_postelex %>% 
+  filter(election_state == "GA",
+         election %in% c("GA Senate 2020 General Runoff", "GA Senate Special 2020 General Runoff"),
+         !station %in% c("Facebook", "Google")) #take out social media ads so it's tv airings only
+
+
 ```
 
 ####
-The following summaries are compiled from Ad Analytics' database of all political ad airings. The numbers below reflect the currently available data as of *`r format(Sys.time(), '%I:%M %p on %b. %d')`*.
+The following summaries are compiled from Ad Analytics' database of all political ads that have aired on television in U.S. markets nationwide. Here we're looking only at the ads associated with the two Georgia Senate runoffs that could determine the balance of power in the U.S. Senate. The runoff elections will take place on Jan. 5.  
+  
+The numbers below reflect the currently available data as of **`r format(Sys.time(), '%I:%M %p on %b. %d')`**.
 
 
 ####
@@ -73,6 +96,7 @@ The following summaries are compiled from Ad Analytics' database of all politica
 ga_runoff_tvads %>% 
   group_by(advertiser_party) %>% 
   summarise(ads_aired = n(), est_spent = sum(spent)) %>%
+  arrange(desc(ads_aired)) %>% 
   gt() %>%
   # tab_options(table.align = "left") %>%
   cols_align(
@@ -102,6 +126,7 @@ ga_runoff_tvads %>%
 ga_runoff_tvads %>% 
   group_by(election, advertiser_party, advertiser) %>% 
   summarise(ads_aired = n(), est_spent = sum(spent)) %>%
+  arrange(desc(ads_aired)) %>% 
   gt(rowname_col = "election", groupname_col = "advertiser_party") %>%
   # tab_options(table.align = "left") %>% 
   cols_align(
@@ -276,7 +301,7 @@ ga_runoff_tvads %>%
   group_by(program_name) %>% 
   summarise(ads_aired = n(), est_spent = sum(spent)) %>%
   arrange(desc(ads_aired)) %>% 
-  head(15) %>% 
+  head(10) %>% 
   gt() %>%
   # tab_options(table.align = "left") %>% 
   cols_align(
@@ -302,8 +327,82 @@ ga_runoff_tvads %>%
 ```
 
 
+#
+# Contracts for Future Spending
+
+Ad Analytics also captures contracts signed with TV stations for future spending on political ads. The numbers below reflect the currently available data for **airtime booked for after `r format(Sys.time(), '%b. %d')`**.  
+  
+(Note that these are *booking contracts only* and may change, and they frequently do in fast-moving campaigns.)
+
+```{r, echo=FALSE}
+
+#limit to only future spending
+ga_runoff_delta <- ga_runoff_delta %>% 
+  filter(spend_date > today())
+
+```
 
 
+
+####
+```{r, echo=FALSE}
+
+ga_runoff_delta %>% 
+  group_by(advertiser_party) %>% 
+  summarise(to_be_spent = sum(amount)) %>%
+  arrange(desc(to_be_spent)) %>% 
+  gt() %>%
+  # tab_options(table.align = "left") %>%
+  cols_align(
+    align = "right",
+    columns = vars(to_be_spent)
+  ) %>% 
+  fmt_currency(
+    columns = vars(to_be_spent),
+    decimals = 0,
+    currency = "USD"
+  ) %>% 
+   tab_header(
+    title = md("Future Spending by **Party**"),
+    subtitle = "(Contracts Only)"
+  )
+
+
+```
+
+####
+```{r, echo=FALSE}
+
+ga_runoff_delta %>% 
+  group_by(election, advertiser_party, advertiser) %>% 
+  summarise(to_be_spent = sum(amount)) %>%
+  arrange(desc(to_be_spent)) %>% 
+  gt(rowname_col = "election", groupname_col = "advertiser_party") %>%
+  # tab_options(table.align = "left") %>% 
+  cols_align(
+    align = "right",
+    columns = vars(to_be_spent)
+  ) %>% 
+  fmt_currency(
+    columns = vars(to_be_spent),
+    decimals = 0,
+    currency = "USD"
+  ) %>% 
+   tab_header(
+    title = md("Future Spending by **Candidate**"),
+    subtitle = "(Contracts Only)"
+  )
+
+
+```
+
+
+```{r, echo=FALSE}
+
+
+
+
+```
 
 
 
