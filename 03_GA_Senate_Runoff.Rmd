@@ -144,7 +144,7 @@ ga_runoff_tvads %>%
     currency = "USD"
   ) %>% 
    tab_header(
-    title = md("Ads Aired by **Candidate**"),
+    title = md("Ads Aired by **Candidate/Group**"),
     subtitle = "(From Nov. 4th)"
   )
 
@@ -251,7 +251,7 @@ ga_runoff_tvads %>%
     currency = "USD"
   ) %>% 
    tab_header(
-    title = md("Ad Tone by **Candidate**"),
+    title = md("Ad Tone by **Candidate/Group**"),
     subtitle = "(From Nov. 4th)"
   )
 
@@ -389,7 +389,7 @@ ga_runoff_delta %>%
     currency = "USD"
   ) %>% 
    tab_header(
-    title = md("Future Spending by **Candidate**"),
+    title = md("Future Spending by **Candidate/Group**"),
     subtitle = "(Contracts Only)"
   )
 
