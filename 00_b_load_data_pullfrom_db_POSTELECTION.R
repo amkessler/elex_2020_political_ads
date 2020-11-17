@@ -75,15 +75,14 @@ glimpse(admo_delta_db)
 
 #filter just for post election records and download
 admo_delta_postelex <- admo_delta_db %>% 
-  filter(spend_date >= "2020-11-04") 
+  filter(spend_date >= "2020-11-04") %>% 
+  collect
 
 #filter for just the GA runoff elections for this analysis (comment this out if we want everything)
-admo_delta_postelex
-
-admo_delta_postelex <- admo_delta_db %>% 
-  filter(election %in% c("GA Senate 2020 General Runoff", "GA Senate Special 2020 General Runoff"),
-         !station %in% c("Facebook", "Google")) %>% 
-  collect()
+# admo_delta_postelex <- admo_delta_db %>% 
+#   filter(election %in% c("GA Senate 2020 General Runoff", "GA Senate Special 2020 General Runoff"),
+#          !station %in% c("Facebook", "Google")) %>% 
+#   collect()
 
 
 #add timestamp
