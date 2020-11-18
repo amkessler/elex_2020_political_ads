@@ -56,9 +56,10 @@ admo_main <- admo_main %>%
 
 #pull out GA runoff records only, tv ads
 ga_runoff_tvads <- admo_main %>% 
-  filter(election_state == "GA",
-         election %in% c("GA Senate 2020 General Runoff", "GA Senate Special 2020 General Runoff"),
-         !station %in% c("Facebook", "Google")) #take out social media ads so it's tv airings only
+  filter(
+    # election_state == "GA",
+    election %in% c("GA Senate 2020 General Runoff", "GA Senate Special 2020 General Runoff"),
+    !station %in% c("Facebook", "Google")) #take out social media ads so it's tv airings only
 
 
 #### DELTA - SPENDING CONTRACTS ####
@@ -77,13 +78,13 @@ admo_delta_postelex <- admo_delta_postelex %>%
 ga_runoff_delta <- admo_delta_postelex %>% 
   filter(election_state == "GA",
          election %in% c("GA Senate 2020 General Runoff", "GA Senate Special 2020 General Runoff"),
-         !station %in% c("Facebook", "Google")) #take out social media ads so it's tv airings only
-
+         media_type %in% c("Broadcast", "Cable", "Satellite"), #limit to just TV
+         !station %in% c("Facebook", "Google")) #should be filtered by prev line but just in case
 
 ```
 
 ####
-The following summaries are compiled from Ad Analytics' database of all political ads that have aired on television in U.S. markets nationwide. Here we're looking only at the ads associated with the two Georgia Senate runoffs that could determine the balance of power in the U.S. Senate. The runoff elections will take place on Jan. 5.  
+The following summaries are compiled from Ad Analytics' database of all political ads that have aired in U.S. markets (including cable and satellite providers, along with a sm). Here we're looking only at the ads associated with the two Georgia Senate runoffs that could determine the balance of power in the U.S. Senate. The runoff elections will take place on Jan. 5.  
   
 The numbers below reflect the currently available data as of **`r format(Sys.time(), '%I:%M %p on %b. %d')`**.
 
@@ -95,24 +96,24 @@ The numbers below reflect the currently available data as of **`r format(Sys.tim
 
 ga_runoff_tvads %>% 
   group_by(advertiser_party) %>% 
-  summarise(ads_aired = n(), est_spent = sum(spent)) %>%
+  summarise(ads_aired = n()) %>%
   arrange(desc(ads_aired)) %>% 
   gt() %>%
   # tab_options(table.align = "left") %>%
   cols_align(
     align = "right",
-    columns = vars(ads_aired, est_spent)
+    columns = vars(ads_aired)
   ) %>% 
   fmt_number(
     columns = vars(ads_aired),
     decimals = 0,
     use_seps = TRUE
   ) %>% 
-  fmt_currency(
-    columns = vars(est_spent),
-    decimals = 0,
-    currency = "USD"
-  ) %>% 
+  # fmt_currency(
+  #   columns = vars(est_spent),
+  #   decimals = 0,
+  #   currency = "USD"
+  # ) %>% 
    tab_header(
     title = md("Ads Aired by **Party**"),
     subtitle = "(From Nov. 4th)"
@@ -125,24 +126,24 @@ ga_runoff_tvads %>%
 
 ga_runoff_tvads %>% 
   group_by(election, advertiser_party, advertiser) %>% 
-  summarise(ads_aired = n(), est_spent = sum(spent)) %>%
+  summarise(ads_aired = n()) %>%
   arrange(desc(ads_aired)) %>% 
   gt(rowname_col = "election", groupname_col = "advertiser_party") %>%
   # tab_options(table.align = "left") %>% 
   cols_align(
     align = "right",
-    columns = vars(ads_aired, est_spent)
+    columns = vars(ads_aired)
   ) %>% 
   fmt_number(
     columns = vars(ads_aired),
     decimals = 0,
     use_seps = TRUE
   ) %>% 
-  fmt_currency(
-    columns = vars(est_spent),
-    decimals = 0,
-    currency = "USD"
-  ) %>% 
+  # fmt_currency(
+  #   columns = vars(est_spent),
+  #   decimals = 0,
+  #   currency = "USD"
+  # ) %>% 
    tab_header(
     title = md("Ads Aired by **Candidate/Group**"),
     subtitle = "(From Nov. 4th)"
@@ -160,8 +161,8 @@ dailycount_byparty <- ga_runoff_tvads %>%
 
 #area chart by party
 ggplot(dailycount_byparty, aes(x = airdate, y = ad_count)) + 
-  geom_area(aes(color = advertiser_party, fill = advertiser_party), 
-            alpha = 0.5, position = position_dodge(0.8)) +
+  geom_col(aes(color = advertiser_party, fill = advertiser_party), 
+            alpha = 0.5, position = position_dodge(preserve = "single")) +
   scale_color_manual(values = c("#00AFBB", "#F2785D")) +
   scale_fill_manual(values = c("#00AFBB", "#F2785D")) +
   labs(title = "Daily Count of Ad Spots, By Party", 
@@ -186,8 +187,8 @@ dailycount_bycand <- ga_runoff_tvads %>%
 ggplot(dailycount_bycand, aes(x = airdate, y = ad_count)) + 
   geom_col(aes(color = advertiser, fill = advertiser), 
            alpha = 0.5, position = position_dodge(preserve = "single")) +
-  scale_color_manual(values = c("#DC3A3A", "#4BAFD8", "#E8857E", "#2E90B8")) +
-  scale_fill_manual(values = c("#DC3A3A", "#4BAFD8", "#E8857E", "#2E90B8")) +
+  # scale_color_manual(values = c("#DC3A3A", "#4BAFD8", "#E8857E", "#2E90B8")) +
+  # scale_fill_manual(values = c("#DC3A3A", "#4BAFD8", "#E8857E", "#2E90B8")) +
   labs(title = "Daily Count of Ad Spots, By Candidate", 
        subtitle = "",
        x = "",
@@ -233,23 +234,23 @@ ga_runoff_tvads %>%
 
 ga_runoff_tvads %>% 
   group_by(advertiser_party, advertiser, tone) %>% 
-  summarise(ads_aired = n(), est_spent = sum(spent)) %>%
+  summarise(ads_aired = n()) %>%
   gt(rowname_col = "election", groupname_col = "advertiser_party") %>%
   # tab_options(table.align = "left") %>% 
   cols_align(
     align = "right",
-    columns = vars(ads_aired, est_spent)
+    columns = vars(ads_aired)
   ) %>% 
   fmt_number(
     columns = vars(ads_aired),
     decimals = 0,
     use_seps = TRUE
   ) %>% 
-  fmt_currency(
-    columns = vars(est_spent),
-    decimals = 0,
-    currency = "USD"
-  ) %>% 
+  # fmt_currency(
+  #   columns = vars(est_spent),
+  #   decimals = 0,
+  #   currency = "USD"
+  # ) %>% 
    tab_header(
     title = md("Ad Tone by **Candidate/Group**"),
     subtitle = "(From Nov. 4th)"
@@ -265,25 +266,25 @@ ga_runoff_tvads %>%
 
 ga_runoff_tvads %>% 
   group_by(market) %>% 
-  summarise(ads_aired = n(), est_spent = sum(spent)) %>%
+  summarise(ads_aired = n()) %>%
   arrange(desc(ads_aired)) %>% 
   head(10) %>% 
   gt() %>%
   # tab_options(table.align = "left") %>% 
   cols_align(
     align = "right",
-    columns = vars(ads_aired, est_spent)
+    columns = vars(ads_aired)
   ) %>% 
   fmt_number(
     columns = vars(ads_aired),
     decimals = 0,
     use_seps = TRUE
   ) %>% 
-  fmt_currency(
-    columns = vars(est_spent),
-    decimals = 0,
-    currency = "USD"
-  )  %>% 
+  # fmt_currency(
+  #   columns = vars(est_spent),
+  #   decimals = 0,
+  #   currency = "USD"
+  # )  %>% 
    tab_header(
     title = md("Top 10 Markets for Ad Airings"),
     subtitle = "(From Nov. 4th)"
@@ -299,25 +300,25 @@ ga_runoff_tvads %>%
 
 ga_runoff_tvads %>% 
   group_by(program_name) %>% 
-  summarise(ads_aired = n(), est_spent = sum(spent)) %>%
+  summarise(ads_aired = n()) %>%
   arrange(desc(ads_aired)) %>% 
   head(10) %>% 
   gt() %>%
   # tab_options(table.align = "left") %>% 
   cols_align(
     align = "right",
-    columns = vars(ads_aired, est_spent)
+    columns = vars(ads_aired)
   ) %>% 
   fmt_number(
     columns = vars(ads_aired),
     decimals = 0,
     use_seps = TRUE
   ) %>% 
-  fmt_currency(
-    columns = vars(est_spent),
-    decimals = 0,
-    currency = "USD"
-  )  %>% 
+  # fmt_currency(
+  #   columns = vars(est_spent),
+  #   decimals = 0,
+  #   currency = "USD"
+  # )  %>% 
    tab_header(
     title = md("Top Programs for Ad Airings"),
     subtitle = "(From Nov. 4th)"
@@ -327,27 +328,84 @@ ga_runoff_tvads %>%
 ```
 
 
-#
-# Contracts for Future Spending
+##
+# Ad Spending
 
-Ad Analytics also captures contracts signed with TV stations for future spending on political ads. The numbers below reflect the currently available data for **airtime booked for after `r format(Sys.time(), '%b. %d')`**.  
-  
-(Note that these are *booking contracts only* and may change, and they frequently do in fast-moving campaigns.)
-
-```{r, echo=FALSE}
-
-#limit to only future spending
-ga_runoff_delta <- ga_runoff_delta %>% 
-  filter(spend_date > today())
-
-```
+Ad Analytics also captures data on actual and future ad spending taken from the contracts signed with TV stations. This dataset does not provide the detailed information on airtimes and the nature of the ads themselves, but does allow us to see how much money has been spent on TV advertising so far, as well as the ad buys that have been booked for future days/weeks.
 
 
+### *Spending to Date*
+
+The numbers below reflect the currently available data on **airtime through today, `r format(Sys.time(), '%b. %d')`**.  
 
 ####
 ```{r, echo=FALSE}
 
 ga_runoff_delta %>% 
+  filter(spend_date <= today()) %>% 
+  group_by(advertiser_party) %>% 
+  summarise(spent = sum(amount)) %>%
+  arrange(desc(spent)) %>% 
+  gt() %>%
+  # tab_options(table.align = "left") %>%
+  cols_align(
+    align = "right",
+    columns = vars(spent)
+  ) %>% 
+  fmt_currency(
+    columns = vars(spent),
+    decimals = 0,
+    currency = "USD"
+  ) %>% 
+   tab_header(
+    title = md("Ad Spending by **Party**"),
+    subtitle = "(through today)"
+  )
+
+
+```
+
+####
+```{r, echo=FALSE}
+
+ga_runoff_delta %>% 
+  filter(spend_date <= today()) %>% 
+  group_by(election, advertiser_party, advertiser) %>% 
+  summarise(spent = sum(amount)) %>%
+  arrange(desc(spent)) %>% 
+  gt(rowname_col = "election", groupname_col = "advertiser_party") %>%
+  # tab_options(table.align = "left") %>% 
+  cols_align(
+    align = "right",
+    columns = vars(spent)
+  ) %>% 
+  fmt_currency(
+    columns = vars(spent),
+    decimals = 0,
+    currency = "USD"
+  ) %>% 
+   tab_header(
+    title = md("Ad Spending by **Candidate/Group**"),
+    subtitle = "(through today)"
+  )
+
+
+```
+
+
+
+
+### *Future Spending Booked*
+
+The numbers below reflect the currently available data on **airtime booked for after `r format(Sys.time(), '%b. %d')`**.  
+  
+(Note that these are *booking contracts only* and may change, and they frequently do in fast-moving campaigns.)
+
+####
+```{r, echo=FALSE}
+
+ga_runoff_delta %>% 
+  filter(spend_date > today()) %>% 
   group_by(advertiser_party) %>% 
   summarise(to_be_spent = sum(amount)) %>%
   arrange(desc(to_be_spent)) %>% 
@@ -374,6 +432,7 @@ ga_runoff_delta %>%
 ```{r, echo=FALSE}
 
 ga_runoff_delta %>% 
+  filter(spend_date > today()) %>% 
   group_by(election, advertiser_party, advertiser) %>% 
   summarise(to_be_spent = sum(amount)) %>%
   arrange(desc(to_be_spent)) %>% 
