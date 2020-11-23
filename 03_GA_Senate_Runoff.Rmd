@@ -158,7 +158,7 @@ ga_runoff_tvads %>%
 
 dailycount_byparty <- ga_runoff_tvads %>% 
   count(airdate, advertiser_party, name = "ad_count") %>% 
-  filter(airdate < "2020-11-23")
+  # filter(airdate < "2020-11-23")
 
 #area chart by party
 ggplot(dailycount_byparty, aes(x = airdate, y = ad_count)) + 
