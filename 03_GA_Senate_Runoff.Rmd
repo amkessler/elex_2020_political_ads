@@ -81,6 +81,16 @@ ga_runoff_delta <- admo_delta_postelex %>%
          media_type %in% c("Broadcast", "Cable", "Satellite"), #limit to just TV
          !station %in% c("Facebook", "Google")) #should be filtered by prev line but just in case
 
+
+
+#TO FOCUS JUST ON ONE SPECIFIC DAY
+ga_runoff_tvads <- ga_runoff_tvads %>% 
+  filter(airdate == "2020-11-26")
+
+ga_runoff_delta <- ga_runoff_delta %>% 
+  filter(spend_date == "2020-11-26")
+
+
 ```
 
 ####
@@ -157,8 +167,7 @@ ga_runoff_tvads %>%
 ```{r, echo=FALSE}
 
 dailycount_byparty <- ga_runoff_tvads %>% 
-  count(airdate, advertiser_party, name = "ad_count") %>% 
-  # filter(airdate < "2020-11-23")
+  count(airdate, advertiser_party, name = "ad_count") # %>% filter(airdate < "2020-11-23")
 
 #area chart by party
 ggplot(dailycount_byparty, aes(x = airdate, y = ad_count)) + 
