@@ -83,12 +83,12 @@ ga_runoff_delta <- admo_delta_postelex %>%
 
 
 
-#TO FOCUS JUST ON ONE SPECIFIC DAY
-ga_runoff_tvads <- ga_runoff_tvads %>% 
-  filter(airdate == "2020-11-26")
-
-ga_runoff_delta <- ga_runoff_delta %>% 
-  filter(spend_date == "2020-11-26")
+# #TO FOCUS JUST ON ONE SPECIFIC DAY
+# ga_runoff_tvads <- ga_runoff_tvads %>% 
+#   filter(airdate == "2020-11-26")
+# 
+# ga_runoff_delta <- ga_runoff_delta %>% 
+#   filter(spend_date == "2020-11-26")
 
 
 ```
