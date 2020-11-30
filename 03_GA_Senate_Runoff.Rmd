@@ -404,6 +404,66 @@ ga_runoff_delta %>%
 
 
 
+### *Spending TODAY itself*
+
+The numbers below reflect the currently available data on **airtime bought for today, `r format(Sys.time(), '%b. %d')`**.  
+
+####
+```{r, echo=FALSE}
+
+ga_runoff_delta %>% 
+  filter(spend_date == today()) %>% 
+  group_by(advertiser_party) %>% 
+  summarise(spent = sum(amount)) %>%
+  arrange(desc(spent)) %>% 
+  gt() %>%
+  # tab_options(table.align = "left") %>%
+  cols_align(
+    align = "right",
+    columns = vars(spent)
+  ) %>% 
+  fmt_currency(
+    columns = vars(spent),
+    decimals = 0,
+    currency = "USD"
+  ) %>% 
+   tab_header(
+    title = md("Ad Spending by **Party**"),
+    subtitle = "(Today's Buys Only)"
+  )
+
+
+```
+
+####
+```{r, echo=FALSE}
+
+ga_runoff_delta %>% 
+  filter(spend_date == today()) %>% 
+  group_by(election, advertiser_party, advertiser) %>% 
+  summarise(spent = sum(amount)) %>%
+  arrange(desc(spent)) %>% 
+  gt(rowname_col = "election", groupname_col = "advertiser_party") %>%
+  # tab_options(table.align = "left") %>% 
+  cols_align(
+    align = "right",
+    columns = vars(spent)
+  ) %>% 
+  fmt_currency(
+    columns = vars(spent),
+    decimals = 0,
+    currency = "USD"
+  ) %>% 
+   tab_header(
+    title = md("Ad Spending by **Candidate/Group**"),
+    subtitle = "(Today's Buys Only)"
+  )
+
+
+```
+
+
+
 
 ### *Future Spending Booked*
 
