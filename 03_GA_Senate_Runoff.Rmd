@@ -375,6 +375,37 @@ ga_runoff_delta %>%
 
 ```
 
+
+####
+```{r, echo=FALSE}
+
+dailyspend_byparty <- ga_runoff_delta %>% 
+  filter(spend_date <= today(),
+         advertiser_party %in% c("Democrat", "Republican")) %>% 
+  group_by(spend_date, advertiser_party) %>% 
+  summarise(spent = sum(amount)) %>% 
+  ungroup()
+
+#daily chart by party
+ggplot(dailyspend_byparty, aes(x = spend_date, y = spent)) + 
+  geom_col(aes(color = advertiser_party, fill = advertiser_party), 
+            alpha = 0.5, position = position_dodge(preserve = "single")) +
+  scale_color_manual(values = c("#00AFBB", "#F2785D")) +
+  scale_fill_manual(values = c("#00AFBB", "#F2785D")) +
+  labs(title = "Daily Spending on Ads Aired, By Party", 
+       subtitle = "",
+       x = "",
+       y = "") +
+  theme_minimal() +
+  theme(plot.title = element_text(hjust = 0.5)) +
+  scale_y_continuous(labels = dollar)
+
+
+
+```
+
+
+
 ####
 ```{r, echo=FALSE}
 
